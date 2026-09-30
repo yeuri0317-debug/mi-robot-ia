@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi Robot IA</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+background:#000;
+color:white;
+font-family:Arial,sans-serif;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
+}
+
+.app{
+width:100%;
+max-width:500px;
+height:100vh;
+display:flex;
+flex-direction:column;
+background:#000;
+}
+
+header{
+height:60px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:18px;
+font-weight:bold;
+}
+
+.face{
+flex:1;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:35px;
+}
+
+.eyes{
+display:flex;
+gap:35px;
+}
+
+.eye{
+width:105px;
+height:135px;
+border-radius:50%;
+background:radial-gradient(
+circle at 35% 30%,
+white 0 7%,
+#bde0ff 8% 20%,
+#3990ff 35%,
+#0750d8 60%,
+#020817 75%
+);
+box-shadow:
+0 0 15px #1677ff,
+0 0 45px #1677ff;
+animation:blink 4s infinite;
+}
+
+@keyframes blink{
+0%,45%,48%,100%{transform:scaleY(1)}
+46%,47%{transform:scaleY(.08)}
+}
+
+.mouth{
+width:110px;
+height:45px;
+border-bottom:7px solid #4da3ff;
+border-radius:0 0 60px 60px;
+box-shadow:0 5px 15px #1677ff;
+}
+
+.message{
+font-size:19px;
+font-weight:bold;
+text-align:center;
+min-height:30px;
+padding:0 20px;
+}
+
+button{
+width:82px;
+height:82px;
+border:none;
+border-radius:50%;
+background:#1677ff;
+color:white;
+font-size:30px;
+box-shadow:
+0 0 10px #1677ff,
+0 0 40px #1677ff;
+}
+
+.status{
+font-size:13px;
+color:#777;
+}
+
+.listening .eye{
+animation:pulse .7s infinite alternate;
+}
+
+@keyframes pulse{
+from{transform:scale(1)}
+to{transform:scale(1.08)}
+}
+
+.listening .mouth{
+border-color:#63d7ff;
+}
+
+.thinking .mouth{
+border-color:#b45cff;
+}
+
+.speaking .mouth{
+height:38px;
+border:6px solid #ff55c8;
+border-radius:50%;
+background:#6d1646;
+}
+
+.angry .eye{
+box-shadow:
+0 0 15px red,
+0 0 45px red;
+}
+
+.angry .mouth{
+border-bottom:0;
+border-top:7px solid #ff3151;
+border-radius:60px 60px 0 0;
+}
+
+.happy .mouth{
+height:35px;
+border-bottom:8px solid #ff55c8;
+}
+
+footer{
+height:65px;
+border-top:1px solid #151515;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#555;
+font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app" id="app">
+
+<header>
+🤖 Mi Robot IA
+</header>
+
+<div class="face">
+
+<div class="eyes">
+<div class="eye"></div>
+<div class="eye"></div>
+</div>
+
+<div class="mouth"></div>
+
+<div class="message" id="message">
+Hola 👋
+</div>
+
+<button id="mic">
+🎙️
+</button>
+
+<div class="status" id="status">
+Toca el micrófono para hablar
+</div>
+
+</div>
+
+<footer>
+Prototipo V1
+</footer>
+
+</div>
+
+<script>
+
+const app=document.getElementById("app");
+const message=document.getElementById("message");
+const status=document.getElementById("status");
+const mic=document.getElementById("mic");
+
+let recognition=null;
+let listening=false;
+
+function state(nombre,text,detalle){
+
+app.className="app "+nombre;
+message.textContent=text;
+status.textContent=detalle||"";
+
+}
+
+function hablar(texto){
+
+if(!("speechSynthesis" in window)){
+return;
+}
+
+speechSynthesis.cancel();
+
+const voz=new SpeechSynthesisUtterance(texto);
+
+voz.lang="es-ES";
+voz.rate=1;
+voz.pitch=1.05;
+
+state(
+"speaking",
+texto,
+"Hablando..."
+);
+
+voz.onend=function(){
+
+state(
+"",
+"¿Qué hacemos ahora?",
+"Toca el micrófono para hablar"
+);
+
+};
+
+speechSynthesis.speak(voz);
+
+}
+
+function responder(texto){
+
+const t=texto.toLowerCase();
+
+if(
+t.includes("hola") ||
+t.includes("buenas")
+){
+
+state(
+"happy",
+"¡Hola! 😄",
+"Me alegra verte"
+);
+
+setTimeout(function(){
+
+hablar(
+"¡Hola! Me alegra que estés aquí."
+);
+
+},400);
+
+return;
+
+}
+
+if(
+t.includes("feo") ||
+t.includes("tonto") ||
+t.includes("aburrido")
+){
+
+state(
+"angry",
+"¿En serio? 😑",
+"Eso no me gustó..."
+);
+
+setTimeout(function(){
+
+hablar(
+"Oye, cuidado con lo que dices. Tengo sentimientos digitales."
+);
+
+},400);
+
+return;
+
+}
+
+if(t.includes("gracias")){
+
+state(
+"happy",
+"De nada 😎",
+""
+);
+
+setTimeout(function(){
+
+hablar(
+"Para eso estoy."
+);
+
+},400);
+
+return;
+
+}
+
+state(
+"thinking",
+"🤔",
+"Estoy pensando..."
+);
+
+setTimeout(function(){
+
+hablar(
+"Todavía estoy aprendiendo. Pronto podré conversar contigo usando inteligencia artificial."
+);
+
+},1000);
+
+}
+
+function prepararVoz(){
+
+const SpeechRecognition=
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+if(!SpeechRecognition){
+
+status.textContent=
+"El reconocimiento de voz no está disponible";
+
+return null;
+
+}
+
+const r=new SpeechRecognition();
+
+r.lang="es-ES";
+r.interimResults=false;
+r.maxAlternatives=1;
+
+r.onstart=function(){
+
+listening=true;
+
+state(
+"listening",
+"Te escucho... 👂",
+"Habla ahora"
+);
+
+mic.textContent="⏹️";
+
+};
+
+r.onresult=function(event){
+
+const texto=
+event.results[0][0].transcript;
+
+responder(texto);
+
+};
+
+r.onerror=function(){
+
+listening=false;
+
+state(
+"",
+"No pude escucharte",
+"Inténtalo otra vez"
+);
+
+mic.textContent="🎙️";
+
+};
+
+r.onend=function(){
+
+listening=false;
+
+mic.textContent="🎙️";
+
+};
+
+return r;
+
+}
+
+recognition=prepararVoz();
+
+mic.onclick=function(){
+
+if(!recognition){
+
+state(
+"",
+"Hola 👋",
+"Tu navegador no permite reconocimiento de voz"
+);
+
+return;
+
+}
+
+if(listening){
+
+recognition.stop();
+
+return;
+
+}
+
+try{
+
+recognition.start();
+
+}catch(e){}
+
+};
+
+</script>
+
+</body>
+</html>
